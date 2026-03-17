@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -19,37 +19,45 @@ import { useAtomValue, useSetAtom } from 'jotai/react';
 import { GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
-import { useColors } from '@/hooks/useColors';
-import useCurrentPage from '@/hooks/useCurrentPage';
-import useImagePreloader from '@/hooks/useImagePreloader';
-import useImagesArray from '@/hooks/useImagesArray';
-import useOrientation from '@/hooks/useOrientation';
-import { usePanGestureHandler } from '@/hooks/usePanGestureHandler';
-import useQuranMetadata from '@/hooks/useQuranMetadata';
+import { READING_THEMES } from '@/constants/readingThemes';
+import {
+  useColors,
+  useCurrentPage,
+  useImagePreloader,
+  useImagesArray,
+  useOrientation,
+  usePanGestureHandler,
+  useQuranMetadata,
+} from '@/hooks';
 import {
   dailyTrackerCompleted,
   dailyTrackerGoal,
   flipSound,
   hizbNotification,
   mushafContrast,
+  readingTheme,
   showTrackerNotification,
   yesterdayPage,
 } from '@/jotai/atoms';
 import { calculateThumnsBetweenPages } from '@/utils/hizbProgress';
 import { getSEOMetadataByPage } from '@/utils/quranMetadataUtils';
+import { triggerSelectionHaptic } from '@/utils/triggerHaptic';
 
-import { useNotification } from './NotificationProvider';
-import PageOverlay from './PageOverlay';
-import SEO from './seo';
+import { PageOverlay } from './PageOverlay';
+import { Seo } from './Seo';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
+import { useNotification } from '../Context/NotificationProvider';
 
 const audioSource = require('@/assets/sounds/page-flip-sound.mp3');
 
-export default function MushafPage() {
+export function MushafPage() {
   const player = useAudioPlayer(audioSource);
   const isFlipSoundEnabled = useAtomValue(flipSound);
   const mushafContrastValue = useAtomValue(mushafContrast);
+  const readingThemeValue = useAtomValue(readingTheme);
+  const themeConfig =
+    READING_THEMES[readingThemeValue] || READING_THEMES.default;
 
   const hizbNotificationValue = useAtomValue(hizbNotification);
   const [showHizbNotification, setShowHizbNotification] = useState(false);
@@ -160,27 +168,58 @@ export default function MushafPage() {
     setDimensions({ customPageWidth: width, customPageHeight: height });
   };
 
-  const handlePageChange = (page: number) => {
-    if (page === currentPage) return;
-    setCurrentPage(page);
-    router.replace({
-      pathname: '/',
-      params: {
-        page: page.toString(),
-        ...(temporary ? { temporary: temporary.toString() } : {}),
-      },
-    });
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (page === currentPage) return;
+      setCurrentPage(page);
+      router.replace({
+        pathname: '/',
+        params: {
+          page: page.toString(),
+          ...(temporary ? { temporary: temporary.toString() } : {}),
+        },
+      });
 
-    if (isFlipSoundEnabled) {
-      player.play();
-    }
-  };
+      if (isFlipSoundEnabled) {
+        player.play();
+      }
+
+      const isSurahStart = surahData.some((s) => s.startingPage === page);
+      if (isSurahStart) {
+        triggerSelectionHaptic();
+      }
+    },
+    [
+      currentPage,
+      router,
+      temporary,
+      isFlipSoundEnabled,
+      player,
+      setCurrentPage,
+      surahData,
+    ],
+  );
 
   const { translateX, panGestureHandler } = usePanGestureHandler(
     currentPage,
     handlePageChange,
     defaultNumberOfPages,
   );
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        handlePageChange(currentPage + 1);
+      } else if (e.key === 'ArrowRight') {
+        handlePageChange(currentPage - 1);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [currentPage, handlePageChange]);
 
   const animatedStyle = useAnimatedStyle(() => {
     const maxTranslateX = 20;
@@ -326,7 +365,7 @@ export default function MushafPage() {
 
   return (
     <>
-      <SEO
+      <Seo
         title={seoMetadata.title}
         description={seoMetadata.description}
         keywords={seoMetadata.keywords}
@@ -340,7 +379,7 @@ export default function MushafPage() {
               backgroundColor:
                 colorScheme === 'dark'
                   ? `rgba(26, 26, 26, ${1 - mushafContrastValue})`
-                  : ivoryColor,
+                  : themeConfig.backgroundColor || ivoryColor,
             },
           ]}
           onLayout={handleImageLayout}
@@ -360,6 +399,10 @@ export default function MushafPage() {
                       colorScheme === 'dark' && {
                         opacity: mushafContrastValue,
                       },
+                      colorScheme !== 'dark' &&
+                        themeConfig.imageOpacity < 1 && {
+                          opacity: themeConfig.imageOpacity,
+                        },
                     ]}
                     source={{ uri: asset?.localUri }}
                     contentFit="fill"
@@ -373,6 +416,10 @@ export default function MushafPage() {
                     colorScheme === 'dark' && {
                       opacity: mushafContrastValue,
                     },
+                    colorScheme !== 'dark' &&
+                      themeConfig.imageOpacity < 1 && {
+                        opacity: themeConfig.imageOpacity,
+                      },
                   ]}
                   source={{ uri: asset?.localUri }}
                   contentFit="fill"

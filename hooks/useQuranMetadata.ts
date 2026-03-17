@@ -17,7 +17,7 @@ type QuranMetadata = {
   error: string | null;
 };
 
-export default function useQuranMetadata(): QuranMetadata {
+export function useQuranMetadata(): QuranMetadata {
   const mushafRiwayaValue = useAtomValue(mushafRiwaya);
 
   const [thumnData, setThumnData] = useState<Thumn[]>([]);
@@ -47,29 +47,17 @@ export default function useQuranMetadata(): QuranMetadata {
             specsModule,
             chapterModule,
           ] = await Promise.all([
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-hafs-assim/thumn.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-hafs-assim/hizb.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-hafs-assim/surah.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-hafs-assim/aya.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-hafs-assim/specs.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-hafs-assim/chapter.json'
-            ),
+            import('@/assets/quran-metadata/mushaf-elmadina-hafs-assim/thumn.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-hafs-assim/hizb.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-hafs-assim/surah.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-hafs-assim/aya.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-hafs-assim/specs.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-hafs-assim/chapter.json'),
           ]);
 
           setThumnData(thumnModule.default);
           setHizbData(hizbModule.default);
-          setSurahData(surahModule.default);
+          setSurahData(surahModule.default as Surah[]);
           setAyaData(ayaModule.default.coordinates as Page[]);
           setSpecsData(specsModule.default);
           setChapterData(chapterModule.default);
@@ -83,29 +71,17 @@ export default function useQuranMetadata(): QuranMetadata {
             specsModule,
             chapterModule,
           ] = await Promise.all([
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/thumn.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/hizb.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/surah.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/aya.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/specs.json'
-            ),
-            import(
-              '@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/chapter.json'
-            ),
+            import('@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/thumn.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/hizb.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/surah.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/aya.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/specs.json'),
+            import('@/assets/quran-metadata/mushaf-elmadina-warsh-azrak/chapter.json'),
           ]);
 
           setThumnData(thumnModule.default);
           setHizbData(hizbModule.default);
-          setSurahData(surahModule.default);
+          setSurahData(surahModule.default as Surah[]);
           setAyaData(ayaModule.default.coordinates as Page[]);
           setSpecsData(specsModule.default);
           setChapterData(chapterModule.default);

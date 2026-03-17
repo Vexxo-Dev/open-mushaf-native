@@ -12,13 +12,14 @@ import { Feather } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { useAtom } from 'jotai/react';
 
-import SEO from '@/components/seo';
-import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { useColors } from '@/hooks/useColors';
-import useCurrentPage from '@/hooks/useCurrentPage';
-import { useUpdateAndroidWidget } from '@/hooks/useUpdateAndroidWidget';
+import {
+  ReadingChart,
+  Seo,
+  ThemedButton,
+  ThemedText,
+  ThemedView,
+} from '@/components';
+import { useColors, useCurrentPage, useUpdateAndroidWidget } from '@/hooks';
 import {
   dailyTrackerCompleted,
   dailyTrackerGoal,
@@ -87,7 +88,7 @@ export default function TrackerScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'الورد' }} />
-      <SEO title="الورد - المصحف المفتوح" description="الورد في تطبيق المصحف" />
+      <Seo title="الورد - المصحف المفتوح" description="الورد في تطبيق المصحف" />
       <ThemedView style={styles.container}>
         <ScrollView
           style={styles.scrollView}
@@ -148,6 +149,9 @@ export default function TrackerScreen() {
                   <TouchableOpacity
                     style={styles.controlButton}
                     onPress={decrementDailyGoal}
+                    accessibilityLabel="تقليل الهدف اليومي"
+                    accessibilityHint="اضغط لتقليل عدد الأحزاب في الهدف اليومي"
+                    accessibilityRole="button"
                   >
                     <Feather name="minus" size={20} color={primaryColor} />
                   </TouchableOpacity>
@@ -157,6 +161,9 @@ export default function TrackerScreen() {
                   <TouchableOpacity
                     style={styles.controlButton}
                     onPress={incrementDailyGoal}
+                    accessibilityLabel="زيادة الهدف اليومي"
+                    accessibilityHint="اضغط لزيادة عدد الأحزاب في الهدف اليومي"
+                    accessibilityRole="button"
                   >
                     <Feather name="plus" size={20} color={primaryColor} />
                   </TouchableOpacity>
@@ -164,6 +171,8 @@ export default function TrackerScreen() {
               </ThemedView>
             </ThemedView>
           </ThemedView>
+
+          <ReadingChart />
 
           <ThemedView
             style={[styles.navigationSection, { backgroundColor: cardColor }]}
@@ -232,6 +241,8 @@ export default function TrackerScreen() {
             style={styles.modalOverlay}
             activeOpacity={1}
             onPress={() => setConfirmModalVisible(false)} // Close on overlay press
+            accessibilityLabel="إغلاق نافذة التأكيد"
+            accessibilityRole="button"
           >
             {/* Prevent modal closing when pressing inside content */}
             <ThemedView
@@ -243,6 +254,8 @@ export default function TrackerScreen() {
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setConfirmModalVisible(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="إغلاق نافذة التأكيد"
                 >
                   <Feather name="x" size={24} color={iconColor} />
                 </TouchableOpacity>
@@ -279,8 +292,6 @@ export default function TrackerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
-    margin: 2,
     alignItems: 'center',
     justifyContent: 'flex-start',
     alignSelf: 'center',

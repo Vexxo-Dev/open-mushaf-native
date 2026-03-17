@@ -1,6 +1,7 @@
 import { observe } from 'jotai-effect';
 
-import { TafseerTabs } from '@/types';
+import { CHART_PERIODS } from '@/constants';
+import { Reminder, TafseerTabs } from '@/types';
 import { Riwaya } from '@/types/riwaya';
 
 import { createAtomWithStorage } from './createAtomWithStorage';
@@ -64,15 +65,64 @@ export const dailyTrackerCompleted =
     date: new Date().toDateString(),
   });
 
-observe((get, set) => {
-  (async () => {
-    const stored = await get(dailyTrackerCompleted);
-    const today = new Date().toDateString();
+export type DailyReadingRecord = {
+  hizbsCompleted: number;
+  pagesRead: number;
+  date: string;
+};
 
-    if (stored.date !== today) {
-      set(dailyTrackerCompleted, { value: 0, date: today });
+export const readingHistory = createAtomWithStorage<DailyReadingRecord[]>(
+  'ReadingHistory',
+  [],
+);
+
+observe((get, set) => {
+  const stored = get(dailyTrackerCompleted);
+  const history = get(readingHistory);
+  const today = new Date().toDateString();
+
+  if (stored.date !== today) {
+    const savedYesterday = get(yesterdayPage) as PageWithDate;
+    const lastPage = get(currentSavedPage) as number;
+    const pagesRead = Math.max(0, lastPage - savedYesterday.value);
+
+    if (stored.value > 0 || pagesRead > 0) {
+      const entry: DailyReadingRecord = {
+        hizbsCompleted: stored.value,
+        pagesRead,
+        date: stored.date,
+      };
+
+      const currentIndex = history.findIndex(
+        (record) => record.date === stored.date,
+      );
+
+      const updatedHistory =
+        currentIndex !== -1
+          ? [
+              ...history.slice(0, currentIndex),
+              {
+                ...entry,
+                hizbsCompleted: Math.max(
+                  entry.hizbsCompleted,
+                  history[currentIndex].hizbsCompleted,
+                ),
+                pagesRead: Math.max(
+                  entry.pagesRead,
+                  history[currentIndex].pagesRead,
+                ),
+              },
+              ...history.slice(currentIndex + 1),
+            ]
+          : [...history, entry];
+
+      set(
+        readingHistory,
+        updatedHistory.slice(-CHART_PERIODS[CHART_PERIODS.length - 1].days),
+      );
     }
-  })();
+    set(dailyTrackerCompleted, { value: 0, date: today });
+  }
 });
 
 // Yesterday page logic with async init and sync to currentSavedPage
@@ -123,8 +173,64 @@ observe((get, set) => {
   }
 });
 
+// Reading theme: 'default' | 'sepia' | 'highContrast'
+export const readingTheme = createAtomWithStorage<string>(
+  'ReadingTheme',
+  'default',
+);
+
 // ReadingPositionBanner
 export const readingBannerCollapsedState = createAtomWithStorage<boolean>(
   'ReadingBannerCollapsedState',
   false,
 );
+
+// Reading reminders
+const DEFAULT_REMINDERS: Reminder[] = [
+  {
+    id: 'preset-wird',
+    title: 'الورد اليومي',
+    body: 'حان وقت قراءة وردك اليومي',
+    enabled: false,
+    hour: 20,
+    minute: 0,
+    type: 'daily',
+    preset: 'wird',
+  },
+  {
+    id: 'preset-mulk',
+    title: 'سورة الملك',
+    body: 'لا تنسَ قراءة سورة الملك قبل النوم',
+    enabled: false,
+    hour: 21,
+    minute: 0,
+    type: 'daily',
+    preset: 'mulk',
+  },
+  {
+    id: 'preset-kahf',
+    title: 'سورة الكهف',
+    body: 'لا تنسَ قراءة سورة الكهف — يوم الجمعة',
+    enabled: false,
+    hour: 10,
+    minute: 0,
+    type: 'weekly',
+    dayOfWeek: 6,
+    preset: 'kahf',
+  },
+];
+
+export const remindersAtom = createAtomWithStorage<Reminder[]>(
+  'Reminders',
+  DEFAULT_REMINDERS,
+);
+
+// Multi-bookmark system
+export type Bookmark = {
+  id: string;
+  page: number;
+  label: string;
+  createdAt: string;
+};
+
+export const bookmarks = createAtomWithStorage<Bookmark[]>('Bookmarks', []);
